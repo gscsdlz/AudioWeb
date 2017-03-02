@@ -1,0 +1,181 @@
+<!DOCTYPE HTML>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="./css/bootstrap.min.css" rel="stylesheet">
+<link href="./css/prism.css" rel="stylesheet">
+<script src="./js/jquery.min.js"></script>
+<script src="./js/jquery.json.js"></script>
+<script src="./js/bootstrap.min.js"></script>
+<script src="./js/prism.js"></script>
+<script src="./js/echarts.min.js"></script>
+<script src="./js/AjaxFileUpload.js"></script>
+<title>音乐播放器测试</title>
+</head>
+
+<body>
+	<nav class="navbar navbar-inverse navbar-fixed-bottom">
+		<div class="container text-left" style="padding-top: 20px">
+			<div class="row">
+				<div class="col-md-2">
+					<img src="./src/pre.png" alt="上一曲" class="img-circle" width="25px"
+						id="preAudio"> <img src="./src/play.png" alt="播放"
+						class="img-circle" width="35px" id="playAudio"> <img
+						src="./src/next.png" alt="下一曲" class="img-circle" width="25px"
+						id="nextAudio"> <img src="./src/person.png" alt="歌手头像"
+						class="img-thumbnail" width="40px">
+				</div>
+				<div class="col-md-7" style="margin-top: 10px">
+					<div class="progress" id="progressUp" style="width:100%; height:10px;">
+						<div id="progress"
+							class="progress-bar progress-bar-striped active"
+							role="progressbar" aria-valuenow="20" aria-valuemin="0"
+							aria-valuemax="100" style="width:0%;">
+							<span class="sr-only">Complete</span>
+						</div>
+					</div>
+				</div>
+				<div class="col-md-3">
+					<span style="color: white" id="audioTime">00:00/00:00</span>&nbsp;
+					<img src="./src/vdown.png" alt="音量减小" class="img-circl" id="volumedown" width="25px">
+					<img src="./src/vmuted.png" alt="取消静音" class="img-circl" id="volumemuted" width="25px">
+					<img src="./src/vup.png" alt="音量增大" class="img-circl" id="volumeup" width="25px">
+					<img src="./src/star.png" alt="收藏" class="img-circle" width="35px" id="star"> 
+					<img src="./src/download.png" alt="下载" class="img-circle" width="25px" id="download">
+				</div>
+			</div>
+			﻿
+			<audio preload="auto" controls="controls" id="audio"></audio>
+		</div>
+	</nav>
+	<script>
+		var audioList = new Array('./src/1.mp3', './src/2.mp3', './src/3.mp3');
+		var currentIndex = 0;
+		var currentVolume = 1.0;
+		var currentX, zero_X;
+		var ctime, ttime;
+		var interval = self.setInterval("progress()", 400);
+		function play() {
+			if ($("#playAudio").attr("src") == "./src/play.png") {
+				$("#audio")[0].play();
+				$("#playAudio").attr("src", "./src/pause.png");
+			} else {
+				$("#audio")[0].pause();
+				$("#playAudio").attr("src", "./src/play.png");
+			}
+		}
+
+		function progress() {
+			ctime = parseInt($("#audio")[0].currentTime);
+			ttime = parseInt($("#audio")[0].duration);
+			if ($("#audio")[0].ended) {
+				currentIndex++;
+				if (currentIndex >= audioList.length)
+					currentIndex = 0;
+				audioChange();
+			}
+			if (ttime != 0) {
+				setAudioTime(ctime, ttime);
+			}
+		}
+
+		function setAudioTime(ctime, ttime) {
+			var percent = parseInt(ctime / ttime * 100);
+			$("#progress").attr("style", "width:" + percent + "%;");
+			var cmin = parseInt(ctime / 60);
+			var csec = parseInt(ctime % 60);
+
+			var tmin = parseInt(ttime / 60);
+			var tsec = parseInt(ttime % 60);
+
+			cmin = "0" + cmin;
+			if (csec < 10)
+				csec = "0" + csec;
+			tmin = "0" + tmin;
+			if (tsec < 10)
+				tsec = "0" + tsec;
+
+			$("#audioTime").html(cmin + ":" + csec + "/" + tmin + ":" + tsec);
+		}
+	
+		function audioChange() {
+			$("#playAudio").attr("src", "./src/play.png");
+			var audio = $("#audio");
+			audio.attr("src", audioList[currentIndex]);
+			play();
+		}
+
+		function progressChange() {
+			zero_X = $("#progress").offset().left;
+		    var pWidth = parseInt($("#progressUp").css("width"));
+			$("#audio")[0].currentTime = parseInt((currentX - zero_X) / pWidth * ttime);
+			if ($("#playAudio").attr("src") == "./src/play.png") {
+				$("#audio")[0].play();
+				$("#playAudio").attr("src", "./src/pause.png");
+			}
+		}
+		$("document").ready(function() {
+			$("#volumemuted").hide();
+			$("#progress").attr("style", "width:0%;");
+			$("#audio").hide();
+			$("#audio").attr("src", audioList[0]);
+			
+			$("#volumeup").click(function(){
+				currentVolume += 0.1;
+				if(currentVolume > 1)
+					currentVolume = 1;
+				$("#audio")[0].volume = currentVolume;
+			})
+			
+			$("#volumedown").click(function(){
+				currentVolume -= 0.1;
+				if(currentVolume < 0)
+					currentVolume = 0;
+				
+				if(currentVolume == 0) {
+					$("#volumemuted").show();
+					$("#volumeup").hide();
+					$("#volumedown").hide();
+				}
+				$("#audio")[0].volume= currentVolume;
+			})
+			
+			$("#volumemuted").click(function(){
+				$("#volumeup").show();
+				$("#volumedown").show();
+				$("#volumemuted").hide();
+				currentVolume = 0.1;
+				$("#audio")[0].volume = currentVolume;
+			})
+			$("#playAudio").click(play)
+
+			$("#nextAudio").click(function() {
+				currentIndex++;
+				if (currentIndex >= audioList.length)
+					currentIndex = 0;
+				audioChange();
+			})
+			$("#preAudio").click(function() {
+				currentIndex--;
+				if (currentIndex < 0)
+					currentIndex = audioList.length - 1;
+				audioChange();
+			})
+			$("#progress").mousemove(function(e){
+				currentX = e.pageX;
+			})
+			$("#progressUp").mousemove(function(e){
+				currentX = e.pageX;
+			})
+			$("#progress").click(function(){
+				var t = setTimeout("progressChange()",5);
+			})
+			$("#progressUp").click(function(){
+				var t = setTimeout("progressChange()",5);
+			})
+		})
+	</script>
+</body>
+</html>
